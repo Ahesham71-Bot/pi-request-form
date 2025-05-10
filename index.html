@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Proforma Invoice Request</title>
+</head>
+<body>
+  <h1>Proforma Invoice Request</h1>
+  <form id="piForm">
+    <label>Requested By: <input type="text" name="requested_by" required></label><br><br>
+    <label>Requested For: <input type="text" name="requested_for" required></label><br><br>
+    <label>Delivery Date (in weeks): <input type="number" name="delivery_weeks" required></label><br><br>
+    <label>Delivery Type:
+      <select name="delivery_type">
+        <option value="CIF">CIF</option>
+        <option value="Ex-Work">Ex-Work</option>
+        <option value="Site Delivery">Site Delivery</option>
+      </select>
+    </label><br><br>
+    <label>Payment Terms: <input type="text" name="payment_terms" required></label><br><br>
+    <label>Client Name: <input type="text" name="client_name" required></label><br><br>
+    <label>Number of Machines: <input type="number" name="machine_count" id="machine_count" min="1" required></label><br><br>
+
+    <div id="machinesSection"></div>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    document.getElementById('machine_count').addEventListener('change', function () {
+      const count = parseInt(this.value);
+      const section = document.getElementById('machinesSection');
+      section.innerHTML = '';
+      for (let i = 1; i <= count; i++) {
+        section.innerHTML += `
+          <fieldset>
+            <legend>Machine #${i}</legend>
+            <label>Manufacturer: <input type="text" name="manufacturer_${i}" required></label><br>
+            <label>Machine Type: <input type="text" name="machine_type_${i}" required></label><br>
+            <label>Quantity: <input type="number" name="quantity_${i}" required></label><br>
+            <label>Price: <input type="number" name="price_${i}" required></label>
+          </fieldset><br>
+        `;
+      }
+    });
+
+    document.getElementById('piForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+
+      const response = await fetch('YOUR_N8N_WEBHOOK_URL_HERE', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert('Request submitted successfully!');
+        this.reset();
+      } else {
+        alert('Failed to submit request.');
+      }
+    });
+  </script>
+</body>
+</html>
