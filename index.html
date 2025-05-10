@@ -2,80 +2,46 @@
 <html>
 <head>
   <title>Proforma Invoice Request</title>
-  <link href="https://fonts.googleapis.com/css2?family=San+Francisco:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'San Francisco', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #f9f9fb;
-      margin: 0;
-      padding: 40px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: #f5f5f7;
       color: #1d1d1f;
-    }
-    h1 {
-      font-weight: 600;
-      margin-bottom: 24px;
-    }
-    form {
-      background: #fff;
-      border-radius: 14px;
-      padding: 32px;
-      max-width: 700px;
+      padding: 2em;
+      max-width: 800px;
       margin: auto;
-      box-shadow: 0 0 32px rgba(0,0,0,0.05);
     }
-    label {
+    h1 { font-size: 2em; text-align: center; margin-bottom: 1em; }
+    label, select, input, fieldset {
       display: block;
-      margin-bottom: 16px;
-    }
-    input, select {
+      margin-bottom: 1em;
       width: 100%;
-      padding: 12px;
-      border: 1px solid #d1d1d6;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
+      font-size: 1em;
     }
     fieldset {
-      border: 1px solid #e5e5ea;
-      border-radius: 12px;
-      margin-top: 20px;
-      padding: 16px;
-      background: #f2f2f7;
-    }
-    legend {
-      font-weight: 600;
+      padding: 1em;
+      border: 1px solid #d2d2d7;
+      border-radius: 10px;
+      background: white;
     }
     button {
-      background-color: #007aff;
+      background-color: #0071e3;
       color: white;
+      font-size: 1em;
+      padding: 0.6em 2em;
       border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
-      margin-top: 24px;
     }
-    button:hover {
-      background-color: #005fcb;
-    }
+    button:hover { background-color: #005bb5; }
   </style>
 </head>
 <body>
+  <h1>Proforma Invoice Request</h1>
   <form id="piForm">
-    <h1>Proforma Invoice Request</h1>
-
-    <label>Requested By:
-      <input type="text" name="requested_by" required>
-    </label>
-
-    <label>Requested For:
-      <input type="text" name="requested_for" required>
-    </label>
-
-    <label>Delivery Date (in weeks):
-      <input type="number" name="delivery_weeks" required>
-    </label>
-
+    <label>Requested By: <input type="text" name="requested_by" required></label>
+    <label>Requested For: <input type="text" name="requested_for" required></label>
+    <label>Delivery Date (in weeks): <input type="number" name="delivery_weeks" required></label>
     <label>Delivery Type:
       <select name="delivery_type">
         <option value="CIF">CIF</option>
@@ -83,29 +49,22 @@
         <option value="Site Delivery">Site Delivery</option>
       </select>
     </label>
-
-    <label>Payment Terms:
-      <input type="text" name="payment_terms" required>
-    </label>
-
+    <label>Payment Terms: <input type="text" name="payment_terms" required></label>
     <label>Client Name:
       <select name="client_name" id="clientDropdown" required></select>
     </label>
-
-    <label>Number of Machines:
-      <input type="number" name="machine_count" id="machine_count" min="1" required>
-    </label>
+    <label>Number of Machines: <input type="number" name="machine_count" id="machine_count" min="1" required></label>
 
     <div id="machinesSection"></div>
-
     <button type="submit">Submit</button>
   </form>
 
   <script>
+    const sheetBaseUrl = 'https://opensheet.elk.sh/1q7ECseBFbLjZagcSE2aOlUNMnnzukygUHwFoQNb5Lno';
+
     async function populateClientDropdown() {
-      const sheetUrl = 'https://opensheet.elk.sh/1-qt49otjNLX1uAGhbdJ7I4JucFP6x9mJNobAIEnwaMA/Client%20IDs';
       try {
-        const res = await fetch(sheetUrl);
+        const res = await fetch('https://opensheet.elk.sh/1-qt49otjNLX1uAGhbdJ7I4JucFP6x9mJNobAIEnwaMA/Client%20IDs');
         const clients = await res.json();
         const dropdown = document.getElementById('clientDropdown');
         clients.forEach(client => {
@@ -114,28 +73,64 @@
           opt.textContent = client['Client Name'];
           dropdown.appendChild(opt);
         });
-      } catch (err) {
-        alert('Failed to load client list.');
+      } catch {
+        alert('Failed to load client list');
       }
     }
 
-    populateClientDropdown();
+    const manufacturers = [
+      "ALBA", "Durkopp", "Epa Akin", "Hashima", "Saloon",
+      "Veith Systems", "SmartMRT", "SVEGA", "Vitoni",
+      "TEMEL Makina", "Yilmak", "Jocky"
+    ];
+
+    function createManufacturerDropdown(id) {
+      let options = manufacturers.map(m => `<option value="${m}">${m}</option>`).join('');
+      return `<select name="manufacturer_${id}" id="manufacturer_${id}" required>
+                <option value="">Select Manufacturer</option>${options}
+              </select>`;
+    }
+
+    async function populateMachineDropdown(id, manufacturer) {
+      const dropdown = document.getElementById(`machine_type_${id}`);
+      dropdown.innerHTML = `<option value="">Loading...</option>`;
+      try {
+        const res = await fetch(`${sheetBaseUrl}/${manufacturer}`);
+        const machines = await res.json();
+        dropdown.innerHTML = `<option value="">Select Machine</option>`;
+        machines.forEach(row => {
+          const label = `${row["Machine name"]} - ${row["Machine description"]}`;
+          dropdown.innerHTML += `<option value="${row["Machine name"]}">${label}</option>`;
+        });
+      } catch {
+        dropdown.innerHTML = `<option value="">Failed to load machines</option>`;
+      }
+    }
 
     document.getElementById('machine_count').addEventListener('input', function () {
       const count = parseInt(this.value);
       const section = document.getElementById('machinesSection');
       section.innerHTML = '';
       if (isNaN(count) || count <= 0) return;
+
       for (let i = 1; i <= count; i++) {
-        section.innerHTML += `
-          <fieldset>
-            <legend>Machine #${i}</legend>
-            <label>Manufacturer: <input type="text" name="manufacturer_${i}" required></label>
-            <label>Machine Type: <input type="text" name="machine_type_${i}" required></label>
-            <label>Quantity: <input type="number" name="quantity_${i}" required></label>
-            <label>Price: <input type="number" name="price_${i}" required></label>
-          </fieldset>
+        const fieldset = document.createElement('fieldset');
+        fieldset.innerHTML = `
+          <legend>Machine #${i}</legend>
+          <label>Manufacturer: ${createManufacturerDropdown(i)}</label>
+          <label>Machine Type:
+            <select name="machine_type_${i}" id="machine_type_${i}" required>
+              <option value="">Select Machine</option>
+            </select>
+          </label>
+          <label>Quantity: <input type="number" name="quantity_${i}" required></label>
+          <label>Price: <input type="number" name="price_${i}" required></label>
         `;
+        section.appendChild(fieldset);
+
+        document.getElementById(`manufacturer_${i}`).addEventListener('change', function () {
+          populateMachineDropdown(i, this.value);
+        });
       }
     });
 
@@ -158,7 +153,8 @@
         alert('Failed to submit request.');
       }
     });
+
+    populateClientDropdown();
   </script>
 </body>
 </html>
-
