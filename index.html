@@ -264,13 +264,22 @@
         const machineTypeContainer = document.getElementById(`machine_type_container_${index}`);
 
         select.addEventListener('change', () => {
+          // Clear previous machine type field to avoid hidden required inputs
+          machineTypeContainer.innerHTML = 'Machine Type:';
+
           if (select.value === 'Other') {
             customManufacturerContainer.style.display = 'block';
-            customManufacturerContainer.querySelector('input').required = true; // Make required only when visible
-            machineTypeContainer.innerHTML = `Machine Type: <input type="text" name="machine_type_${index}" required>`;
+            customManufacturerContainer.querySelector('input').required = true;
+
+            const machineTypeInput = document.createElement('input');
+            machineTypeInput.type = 'text';
+            machineTypeInput.name = `machine_type_${index}`;
+            machineTypeInput.required = true;
+            machineTypeContainer.appendChild(machineTypeInput);
           } else {
             customManufacturerContainer.style.display = 'none';
-            customManufacturerContainer.querySelector('input').required = false; // Remove required when hidden
+            customManufacturerContainer.querySelector('input').required = false;
+
             const dropdown = document.createElement('select');
             dropdown.name = `machine_type_${index}`;
             dropdown.required = true;
@@ -285,7 +294,6 @@
                 dropdown.appendChild(opt);
               });
             }
-            machineTypeContainer.innerHTML = 'Machine Type:';
             machineTypeContainer.appendChild(dropdown);
           }
         });
