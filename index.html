@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Proforma Invoice Request</title>
   <style>
     body {
@@ -60,30 +61,38 @@
   </form>
 
   <script>
-    const sheetBaseUrl = 'https://opensheet.elk.sh/1q7ECseBFbLjZagcSE2aOlUNMnnzukygUHwFoQNb5Lno';
+    const sheetID = "1q7ECseBFbLjZagcSE2aOlUNMnnzukygUHwFoQNb5Lno";
+    const baseURL = `https://opensheet.elk.sh/${sheetID}`;
 
+    const manufacturers = [
+      "ALBA", "Durkopp", "Epa Akin", "Hashima", "Saloon",
+      "Veith Systems", "SmartMRT", "SVEGA", "Vitoni",
+      "TEMEL Makina", "Yilmak", "Jooke", "Lectra_Gerber",
+      "Maccpi", "RoboTech", "PMM", "Martin", "Timtas"
+    ];
+
+    const clientDropdown = document.getElementById('clientDropdown');
+    const machineCountInput = document.getElementById('machine_count');
+    const machinesSection = document.getElementById('machinesSection');
+    const form = document.getElementById('piForm');
+
+    // Populate client dropdown
     async function populateClientDropdown() {
       try {
         const res = await fetch('https://opensheet.elk.sh/1-qt49otjNLX1uAGhbdJ7I4JucFP6x9mJNobAIEnwaMA/Client%20IDs');
         const clients = await res.json();
-        const dropdown = document.getElementById('clientDropdown');
         clients.forEach(client => {
           const opt = document.createElement('option');
           opt.value = client['Client Name'];
           opt.textContent = client['Client Name'];
-          dropdown.appendChild(opt);
+          clientDropdown.appendChild(opt);
         });
       } catch {
         alert('Failed to load client list');
       }
     }
 
-    const manufacturers = [
-      "ALBA", "Durkopp", "Epa Akin", "Hashima", "Saloon",
-      "Veith Systems", "SmartMRT", "SVEGA", "Vitoni",
-      "TEMEL Makina", "Yilmak", "Jocky"
-    ];
-
+    // Create manufacturer dropdown
     function createManufacturerDropdown(id) {
       let options = manufacturers.map(m => `<option value="${m}">${m}</option>`).join('');
       return `<select name="manufacturer_${id}" id="manufacturer_${id}" required>
@@ -91,11 +100,12 @@
               </select>`;
     }
 
+    // Populate machine dropdown based on manufacturer
     async function populateMachineDropdown(id, manufacturer) {
       const dropdown = document.getElementById(`machine_type_${id}`);
       dropdown.innerHTML = `<option value="">Loading...</option>`;
       try {
-        const res = await fetch(`${sheetBaseUrl}/${manufacturer}`);
+        const res = await fetch(`${baseURL}/${manufacturer}`);
         const machines = await res.json();
         dropdown.innerHTML = `<option value="">Select Machine</option>`;
         machines.forEach(row => {
@@ -107,10 +117,10 @@
       }
     }
 
-    document.getElementById('machine_count').addEventListener('input', function () {
+    // Handle machine count input
+    machineCountInput.addEventListener('input', function () {
       const count = parseInt(this.value);
-      const section = document.getElementById('machinesSection');
-      section.innerHTML = '';
+      machinesSection.innerHTML = '';
       if (isNaN(count) || count <= 0) return;
 
       for (let i = 1; i <= count; i++) {
@@ -126,7 +136,7 @@
           <label>Quantity: <input type="number" name="quantity_${i}" required></label>
           <label>Price: <input type="number" name="price_${i}" required></label>
         `;
-        section.appendChild(fieldset);
+        machinesSection.appendChild(fieldset);
 
         document.getElementById(`manufacturer_${i}`).addEventListener('change', function () {
           populateMachineDropdown(i, this.value);
@@ -134,7 +144,8 @@
       }
     });
 
-    document.getElementById('piForm').addEventListener('submit', async function (e) {
+    // Handle form submission
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const formData = new FormData(this);
       const data = Object.fromEntries(formData.entries());
@@ -148,12 +159,13 @@
       if (response.ok) {
         alert('Request submitted successfully!');
         this.reset();
-        document.getElementById('machinesSection').innerHTML = '';
+        machinesSection.innerHTML = '';
       } else {
         alert('Failed to submit request.');
       }
     });
 
+    // Initialize client dropdown
     populateClientDropdown();
   </script>
 </body>
