@@ -2,23 +2,30 @@
 <html>
 <head>
   <title>Proforma Invoice Request</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2em; max-width: 800px; margin: auto; }
+    label, input, select, fieldset { display: block; margin-bottom: 1em; width: 100%; }
+    fieldset { padding: 1em; border: 1px solid #ccc; border-radius: 8px; }
+    button { padding: 0.5em 2em; font-size: 1em; border: none; background-color: #4CAF50; color: white; border-radius: 6px; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+  </style>
 </head>
 <body>
   <h1>Proforma Invoice Request</h1>
   <form id="piForm">
-    <label>Requested By: <input type="text" name="requested_by" required></label><br><br>
-    <label>Requested For: <input type="text" name="requested_for" required></label><br><br>
-    <label>Delivery Date (in weeks): <input type="number" name="delivery_weeks" required></label><br><br>
+    <label>Requested By: <input type="text" name="requested_by" required></label>
+    <label>Requested For: <input type="text" name="requested_for" required></label>
+    <label>Delivery Date (in weeks): <input type="number" name="delivery_weeks" required></label>
     <label>Delivery Type:
       <select name="delivery_type">
         <option value="CIF">CIF</option>
         <option value="Ex-Work">Ex-Work</option>
         <option value="Site Delivery">Site Delivery</option>
       </select>
-    </label><br><br>
-    <label>Payment Terms: <input type="text" name="payment_terms" required></label><br><br>
-    <label>Client Name: <input type="text" name="client_name" required></label><br><br>
-    <label>Number of Machines: <input type="number" name="machine_count" id="machine_count" min="1" required></label><br><br>
+    </label>
+    <label>Payment Terms: <input type="text" name="payment_terms" required></label>
+    <label>Client Name: <input type="text" name="client_name" required></label>
+    <label>Number of Machines: <input type="number" name="machine_count" id="machine_count" min="1" required></label>
 
     <div id="machinesSection"></div>
 
@@ -26,19 +33,20 @@
   </form>
 
   <script>
-    document.getElementById('machine_count').addEventListener('change', function () {
+    document.getElementById('machine_count').addEventListener('input', function () {
       const count = parseInt(this.value);
       const section = document.getElementById('machinesSection');
       section.innerHTML = '';
+      if (isNaN(count) || count <= 0) return;
       for (let i = 1; i <= count; i++) {
         section.innerHTML += `
           <fieldset>
             <legend>Machine #${i}</legend>
-            <label>Manufacturer: <input type="text" name="manufacturer_${i}" required></label><br>
-            <label>Machine Type: <input type="text" name="machine_type_${i}" required></label><br>
-            <label>Quantity: <input type="number" name="quantity_${i}" required></label><br>
+            <label>Manufacturer: <input type="text" name="manufacturer_${i}" required></label>
+            <label>Machine Type: <input type="text" name="machine_type_${i}" required></label>
+            <label>Quantity: <input type="number" name="quantity_${i}" required></label>
             <label>Price: <input type="number" name="price_${i}" required></label>
-          </fieldset><br>
+          </fieldset>
         `;
       }
     });
@@ -57,6 +65,7 @@
       if (response.ok) {
         alert('Request submitted successfully!');
         this.reset();
+        document.getElementById('machinesSection').innerHTML = '';
       } else {
         alert('Failed to submit request.');
       }
@@ -64,3 +73,4 @@
   </script>
 </body>
 </html>
+
