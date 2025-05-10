@@ -1,39 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Proforma Invoice Request</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background: #f5f5f7;
-      color: #1d1d1f;
-      padding: 2em;
-      max-width: 800px;
-      margin: auto;
-    }
-    h1 { font-size: 2em; text-align: center; margin-bottom: 1em; }
-    label, select, input, fieldset {
-      display: block;
-      margin-bottom: 1em;
-      width: 100%;
-      font-size: 1em;
-    }
-    fieldset {
-      padding: 1em;
-      border: 1px solid #d2d2d7;
-      border-radius: 10px;
-      background: white;
-    }
-    button {
-      background-color: #0071e3;
-      color: white;
-      font-size: 1em;
-      padding: 0.6em 2em;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2em; max-width: 800px; margin: auto; background-color: #f5f5f7; }
+    label, input, select, fieldset { display: block; margin-bottom: 1em; width: 100%; }
+    fieldset { padding: 1em; border: 1px solid #ccc; border-radius: 12px; background-color: #fff; }
+    button { padding: 0.6em 2em; font-size: 1em; border: none; background-color: #0071e3; color: white; border-radius: 10px; cursor: pointer; }
     button:hover { background-color: #005bb5; }
   </style>
 </head>
@@ -57,95 +30,116 @@
     <label>Number of Machines: <input type="number" name="machine_count" id="machine_count" min="1" required></label>
 
     <div id="machinesSection"></div>
+
     <button type="submit">Submit</button>
   </form>
 
   <script>
-    const sheetID = "1q7ECseBFbLjZagcSE2aOlUNMnnzukygUHwFoQNb5Lno";
-    const baseURL = `https://opensheet.elk.sh/${sheetID}`;
+    const manufacturers = {
+      "ALBA": ["ALBA 9500", "ALBA 9600"],
+      "Durkopp": ["Durkopp 576", "Durkopp 581"],
+      "Epa Akin": ["EPA700", "EPA800"],
+      "Hashima": ["Hashima HSP-800", "Hashima HP-600"],
+      "Saloon": ["Saloon Auto Cutter", "Saloon Iron Press"],
+      "Veith Systems": ["Veith Marker", "Veith Plotter"],
+      "SmartMRT": ["Smart MRT-101", "Smart MRT-202"],
+      "SVEGA": ["SVEGA Line 1", "SVEGA Line 2"],
+      "Vitoni": ["Vitoni 200", "Vitoni 300"],
+      "TEMEL Makina": ["Temel Stitch Pro", "Temel Cutter Max"],
+      "Yilmak": ["Yilmak Auto", "Yilmak Twin"],
+      "Jooke": ["Jooke 500", "Jooke 600"],
+      "Lectra_Gerber": ["Lectra X2", "Gerber Cutter G2"],
+      "Maccpi": ["Maccpi P1", "Maccpi P2"],
+      "RoboTech": ["RoboTech Stitcher", "RoboTech Feeder"],
+      "PMM": ["PMM Presser", "PMM Folder"],
+      "Martin": ["Martin Mark 1", "Martin Mark 2"],
+      "Timtas": ["Timtas Heat", "Timtas Iron"]
+    };
 
-    const manufacturers = [
-      "ALBA", "Durkopp", "Epa Akin", "Hashima", "Saloon",
-      "Veith Systems", "SmartMRT", "SVEGA", "Vitoni",
-      "TEMEL Makina", "Yilmak", "Jooke", "Lectra_Gerber",
-      "Maccpi", "RoboTech", "PMM", "Martin", "Timtas"
-    ];
-
-    const clientDropdown = document.getElementById('clientDropdown');
-    const machineCountInput = document.getElementById('machine_count');
-    const machinesSection = document.getElementById('machinesSection');
-    const form = document.getElementById('piForm');
-
-    // Populate client dropdown
     async function populateClientDropdown() {
+      const sheetUrl = 'https://opensheet.elk.sh/1-qt49otjNLX1uAGhbdJ7I4JucFP6x9mJNobAIEnwaMA/Client%20IDs';
       try {
-        const res = await fetch('https://opensheet.elk.sh/1-qt49otjNLX1uAGhbdJ7I4JucFP6x9mJNobAIEnwaMA/Client%20IDs');
+        const res = await fetch(sheetUrl);
         const clients = await res.json();
+        const dropdown = document.getElementById('clientDropdown');
         clients.forEach(client => {
           const opt = document.createElement('option');
           opt.value = client['Client Name'];
           opt.textContent = client['Client Name'];
-          clientDropdown.appendChild(opt);
+          dropdown.appendChild(opt);
         });
-      } catch {
+      } catch (err) {
         alert('Failed to load client list');
       }
     }
 
-    // Create manufacturer dropdown
-    function createManufacturerDropdown(id) {
-      let options = manufacturers.map(m => `<option value="${m}">${m}</option>`).join('');
-      return `<select name="manufacturer_${id}" id="manufacturer_${id}" required>
-                <option value="">Select Manufacturer</option>${options}
-              </select>`;
-    }
+    populateClientDropdown();
 
-    // Populate machine dropdown based on manufacturer
-    async function populateMachineDropdown(id, manufacturer) {
-      const dropdown = document.getElementById(`machine_type_${id}`);
-      dropdown.innerHTML = `<option value="">Loading...</option>`;
-      try {
-        const res = await fetch(`${baseURL}/${manufacturer}`);
-        const machines = await res.json();
-        dropdown.innerHTML = `<option value="">Select Machine</option>`;
-        machines.forEach(row => {
-          const label = `${row["Machine name"]} - ${row["Machine description"]}`;
-          dropdown.innerHTML += `<option value="${row["Machine name"]}">${label}</option>`;
-        });
-      } catch {
-        dropdown.innerHTML = `<option value="">Failed to load machines</option>`;
-      }
-    }
-
-    // Handle machine count input
-    machineCountInput.addEventListener('input', function () {
+    document.getElementById('machine_count').addEventListener('input', function () {
       const count = parseInt(this.value);
-      machinesSection.innerHTML = '';
+      const section = document.getElementById('machinesSection');
+      section.innerHTML = '';
       if (isNaN(count) || count <= 0) return;
-
       for (let i = 1; i <= count; i++) {
         const fieldset = document.createElement('fieldset');
         fieldset.innerHTML = `
           <legend>Machine #${i}</legend>
-          <label>Manufacturer: ${createManufacturerDropdown(i)}</label>
-          <label>Machine Type:
-            <select name="machine_type_${i}" id="machine_type_${i}" required>
-              <option value="">Select Machine</option>
+          <label>Manufacturer:
+            <select name="manufacturer_${i}" class="manufacturer" data-index="${i}" required>
+              ${Object.keys(manufacturers).map(m => `<option value="${m}">${m}</option>`).join('')}
+              <option value="Other">Other</option>
             </select>
           </label>
-          <label>Quantity: <input type="number" name="quantity_${i}" required></label>
-          <label>Price: <input type="number" name="price_${i}" required></label>
+          <label class="machine-type-container" id="machine_type_container_${i}">
+            Machine Type:
+            <select name="machine_type_${i}" class="machine_type_dropdown"></select>
+          </label>
         `;
-        machinesSection.appendChild(fieldset);
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.name = `quantity_${i}`;
+        qtyInput.required = true;
+        qtyInput.placeholder = 'Quantity';
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.name = `price_${i}`;
+        priceInput.required = true;
+        priceInput.placeholder = 'Price';
 
-        document.getElementById(`manufacturer_${i}`).addEventListener('change', function () {
-          populateMachineDropdown(i, this.value);
-        });
+        fieldset.appendChild(document.createElement('br'));
+        fieldset.appendChild(qtyInput);
+        fieldset.appendChild(priceInput);
+        section.appendChild(fieldset);
       }
+      updateAllMachineDropdowns();
     });
 
-    // Handle form submission
-    form.addEventListener('submit', async function (e) {
+    function updateAllMachineDropdowns() {
+      document.querySelectorAll('.manufacturer').forEach(select => {
+        const index = select.getAttribute('data-index');
+        select.addEventListener('change', () => {
+          const container = document.getElementById(`machine_type_container_${index}`);
+          if (select.value === 'Other') {
+            container.innerHTML = `Machine Type: <input name="machine_type_${index}" required>`;
+          } else {
+            const dropdown = document.createElement('select');
+            dropdown.name = `machine_type_${index}`;
+            dropdown.required = true;
+            manufacturers[select.value].forEach(m => {
+              const opt = document.createElement('option');
+              opt.value = m;
+              opt.textContent = m;
+              dropdown.appendChild(opt);
+            });
+            container.innerHTML = 'Machine Type:';
+            container.appendChild(dropdown);
+          }
+        });
+        select.dispatchEvent(new Event('change'));
+      });
+    }
+
+    document.getElementById('piForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       const formData = new FormData(this);
       const data = Object.fromEntries(formData.entries());
@@ -159,14 +153,11 @@
       if (response.ok) {
         alert('Request submitted successfully!');
         this.reset();
-        machinesSection.innerHTML = '';
+        document.getElementById('machinesSection').innerHTML = '';
       } else {
         alert('Failed to submit request.');
       }
     });
-
-    // Initialize client dropdown
-    populateClientDropdown();
   </script>
 </body>
 </html>
